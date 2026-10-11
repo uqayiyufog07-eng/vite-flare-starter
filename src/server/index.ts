@@ -106,9 +106,13 @@ export { MirrorSyncWorkflow } from './modules/mirror/workflow'
 export { D1BackupWorkflow } from './modules/backups/workflow'
 // Cloudflare Sandbox container DO — backs the run_python / run_shell /
 // run_js / generate_document chat tools. Bound at `SANDBOX` (see
-// wrangler.jsonc → containers + durable_objects). The class ships with
-// the SDK; we only re-export it so wrangler can wire the container.
-export { Sandbox } from '@cloudflare/sandbox'
+// wrangler.jsonc → containers + durable_objects).
+//
+// DEPLOY NOTE: the `Sandbox` re-export was removed for this deployment —
+// Cloudflare Containers requires the Workers Paid plan. The corresponding
+// `containers` block, `SANDBOX` durable-object binding and `Sandbox` export
+// were removed from wrangler.jsonc. The affected chat tools check for a
+// missing `env.SANDBOX` binding and self-disable.
 import { securityHeaders } from './middleware/security'
 import { rateLimiter } from './middleware/rate-limit'
 import { authMiddleware, requireScopes } from './middleware/auth'
