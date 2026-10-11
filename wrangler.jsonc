@@ -4,7 +4,7 @@
   "name": "vite-flare-starter",
   // IMPORTANT: Remove account_id before committing to public repo
   // Set via CLOUDFLARE_ACCOUNT_ID env var or wrangler will prompt
-  "account_id": "0460574641fdbb98159c98ebf593e2bd",
+  "account_id": "5dbfeeed2915872f0855a916283d82c4",
   "compatibility_date": "2026-07-10",
   "compatibility_flags": ["nodejs_compat_v2"],
 
@@ -40,21 +40,12 @@
     {
       "binding": "DB",
       "database_name": "vite-flare-starter-db",
-      "database_id": "cf8cc1a5-c77d-4368-801d-e46d882cdfeb",
+      "database_id": "157795f7-b89c-408b-a13b-7db4c89be987",
       "migrations_dir": "drizzle"
     }
-    ,
-    // Read-only SQL tool (#77, isolation-over-sandboxing). A SEPARATE
-    // database holding only non-sensitive reference data (mirrored
-    // datasets, catalogues) — NEVER point this at the app DB. The
-    // sql_query/sql_schema chat tools self-omit if you remove this
-    // binding. Forks: `npx wrangler d1 create <your-app>-reference`
-    // and swap the id (same as DB above).
-    {
-      "binding": "REFERENCE_DB",
-      "database_name": "vite-flare-starter-reference",
-      "database_id": "de2b18bf-d161-461f-a02e-d2e52e8ed568"
-    }
+    // NOTE (deploy): REFERENCE_DB removed — the Cloudflare account is on the
+    // Free plan and already holds the maximum 10 D1 databases. The
+    // sql_query/sql_schema chat tools self-omit when this binding is absent.
   ],
 
   // R2 Storage (S3-compatible object storage)
@@ -268,14 +259,12 @@
   //    (user, conversation).
   //  - The `Sandbox` class is re-exported from src/server/index.ts and
   //    provisioned in migrations tag v11 below.
-  "containers": [
-    {
-      "class_name": "Sandbox",
-      "image": "./Dockerfile",
-      "instance_type": "lite",
-      "max_instances": 5
-    }
-  ],
+  // NOTE (deploy): `containers` block removed — Cloudflare Containers requires
+  // the Workers Paid plan, and Docker is not available on this machine to build
+  // ./Dockerfile. The `Sandbox` DO binding/export were removed to match, and
+  // src/server/index.ts no longer re-exports the Sandbox class. The
+  // run_python / run_shell / run_js / generate_document chat tools detect the
+  // missing `env.SANDBOX` binding and self-disable at runtime.
 
   // Runtime worker vars (non-secret; secrets go via `wrangler secret put`).
   // SANDBOX_TRANSPORT=rpc switches the Sandbox DO ↔ container control
@@ -289,7 +278,9 @@
   // agents/skills runner: no network, no bindings, per-run isolate. Remove
   // this block if your account can't deploy the beta; the tool degrades
   // gracefully when the binding is absent.
-  "worker_loaders": [{ "binding": "LOADER" }],
+  // NOTE (deploy): `worker_loaders` binding removed — the Worker Loader beta is
+  // not enabled on this account. Function-style skill scripts degrade gracefully
+  // (src/server/modules/chat/tools/skills.ts checks for `env.LOADER`).
 
   // Durable Objects — stateful, SQLite-backed classes that live longer than
   // a single request. One instance per `idFromName(name)`. Used for:
@@ -385,15 +376,6 @@
         "class_name": "ChatAgent"
       },
       {
-        // Sandbox — Cloudflare Sandbox SDK container DO (see `containers`
-        // block above). Class ships with @cloudflare/sandbox; re-exported
-        // from src/server/index.ts. Tools self-omit when this binding is
-        // absent, so removing this block (plus `containers`) is the way
-        // to opt out on a free-plan fork.
-        "name": "SANDBOX",
-        "class_name": "Sandbox"
-      },
-      {
         // ThinkPilotAgent — pilot of the @cloudflare/think harness
         // (actions ledger, scheduled-task DSL, shared skills registry).
         // One DO per user, named `{userId}:main`. Routed via
@@ -429,7 +411,6 @@
     "SpaceAgent": { "type": "durable-object", "storage": "sqlite" },
     "AdminAgent": { "type": "durable-object", "storage": "sqlite" },
     "ChatAgent": { "type": "durable-object", "storage": "sqlite" },
-    "Sandbox": { "type": "durable-object", "storage": "sqlite" },
     "ThinkPilotAgent": { "type": "durable-object", "storage": "sqlite" }
   },
 
